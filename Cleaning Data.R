@@ -1,14 +1,107 @@
-read_csv("Divvy_Trips_2019_Q1.csv")
-Divvy_Trips_2019_Q1 <- read.csv("//wsl.localhost/Ubuntu/home/josef/code/josefperera/Capstone Project/Data/csv/Divvy_Trips_2019_Q1.csv")
-View(Divvy_Trips_2019_Q1)
-df <- Divvy_Trips_2019_Q1
-library(skimr)
-skim_without_charts(df)
+# Upload Divvy datasets (csv files) here
+df2<- read_csv("Divvy_Trips_2019_Q2.csv")
+df3 <- read_csv("Divvy_Trips_2019_Q3.csv")
+df4 <- read_csv("Divvy_Trips_2019_Q4.csv")
+df1 <- read_csv("Divvy_Trips_2019_Q1.csv")
 
-df$start_time <- as.POSIXct(df$start_time, format='%Y-%m-%d %H:%M:%S')
-skim_without_charts(df)
-df$end_time <- as.POSIXct(df$end_time, format='%Y-%m-%d %H:%M:%S')
-df$gender[df$gender == ""] <- NA
-df$trip_length <- (df$end_time-df$start_time)
-df$weekdays <- weekdays(df$start_time)
-Sys.setlocale("LC_TIME", "en_US.UTF-8")
+#comparing colnames
+colnames(df1)
+colnames(df2)
+colnames(df3)
+colnames(df4)
+
+#Renaming colnames to make them consistent for merging data 
+#reference q1 (df1)
+df2<- df2 %>% rename("trip_id" = "01 - Rental Details Rental ID",
+                     "start_time"="01 - Rental Details Local Start Time",
+                     "end_time"="01 - Rental Details Local End Time",
+                     "bikeid"="01 - Rental Details Bike ID",
+                     "tripduration"="01 - Rental Details Duration In Seconds Uncapped",
+                     "from_station_id"="03 - Rental Start Station ID",
+                     "from_station_name"="03 - Rental Start Station Name",
+                     "to_station_id"="02 - Rental End Station ID",
+                     "to_station_name"="02 - Rental End Station Name",
+                     "usertype"="User Type",
+                     "gender"="Member Gender",
+                     "birthyear"="05 - Member Details Member Birthday Year")
+# Inspect the dataframes and look for inconguencies
+str(df1)
+str(df2)
+str(df3)
+str(df4)
+#Bring all tables into one single 
+df <- bind_rows(df1, df2, df3, df4)
+
+# CLEAN UP AND ADD DATA TO PREPARE FOR ANALYSIS
+colnames(df)
+nrow(df)  
+dim(df)  
+head(df)  
+str(df)  
+summary(df)  
+unique(df$usertype)
+unique(df$gender)
+
+#Adding date, month, day and weekday columns to check for seasonal effects/ date/ day specific effects 
+
+#Adding time frames to check for hourly fluctuations
+df$date <- as.Date(df$start_time, format="%d/%m/%Y")
+df$month <- format(as.Date(df$date),"%m")
+df$day <- format(as.Date(df$date),"%d")
+df$weekday <- format(as.Date(df$date),"%A")
+
+#Adding Ride length
+df$ride_length <- difftime(df$end_time, df$start_time)
+str(df)
+is.difftime(df$ride_length)
+df$ride_length <- as.numeric(as.character(df$ride_length))
+
+str(df)
+df_v2 <- df[!(df$to_station_name == "HQ QR" | df$ride_length<0),]
+
+# STEP 4: CONDUCT DESCRIPTIVE ANALYSIS
+#=====================================
+# Descriptive analysis on ride_length (all figures in seconds)
+mean(df_v2$ride_length) #straight average (total ride length / rides)
+median(df_v2$ride_length) #midpoint number in the ascending array of ride lengths
+max(df_v2$ride_length) #longest ride
+min(df_v2$ride_length) #shortest ride
+summary(df_v2$ride_length)
+
+#Aggregated length ride grouped by user type 
+aggregate(df_v2$ride_length ~ df_v2$usertype, FUN = mean)
+aggregate(df_v2$ride_length ~ df_v2$usertype, FUN = median)
+aggregate(df_v2$ride_length ~ df_v2$usertype, FUN = max)
+aggregate(df_v2$ride_length ~ df_v2$usertype, FUN = min)
+
+# See the average ride time by each day for subscribers vs customers
+aggregate(all_trips_v2$ride_length ~ all_trips_v2$member_casual + all_trips_v2$day_of_week, FUN = mean)
+
+df_v2$weekday<- ordered(df_v2$day_of_week, levels=c("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"))
+
+df_v2 %>% mutate(weekday = wday(df_v2$start_time, label = TRUE )) %>% 
+  summarise(number_of_rides = n()
+            , average_duration = mean(ride_length)) %>%
+  arrange(usertype, weekday)
+
+#Plotting total rides arranged by user type and weekday 
+df_v2 %>% mutate(weekday = wday(df_v2$start_time, label = TRUE )) %>% 
+  +     group_by(usertype, weekday) %>% 
+  +     summarise(number_of_rides = n()
+                  ,average_duration = mean(ride_length)) %>%
+  +     arrange(usertype, weekday) %>% 
+  ggplot(mapping = aes(x = weekday, y = number_of_rides, fill = usertype)) + 
+  geom_col(position = "dodge")
+
+#Visualization for average duration
+df_v2 %>% mutate(weekday = wday(df_v2$start_time, label = TRUE )) %>% 
+  group_by(usertype, weekday) %>% 
+  summarise(number_of_rides = n(),average_duration = mean(ride_length)) %>% 
+  arrange(usertype, weekday) %>% 
+  ggplot(mapping = aes(x= weekday, y= average_duration, fill = usertype)) +
+  geom_col(position = "dodge")
+
+# Exporting Summary
+counts <- aggregate(all_trips_v2$ride_length ~ all_trips_v2$member_casual + all_trips_v2$day_of_week, FUN = mean)
+write.csv(counts, file = '~/')
+
