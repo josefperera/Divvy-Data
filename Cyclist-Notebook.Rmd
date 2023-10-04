@@ -1,0 +1,339 @@
+---
+title: "Business Task Statement _ Capstone Cyclist"
+author: "Josef"
+date: "2023-09-22"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Business Task
+
+### Scenario
+
+* Since 2016, Cyclistic developed a successful bike-share offering. 
+* the program has grown to a fleet of 5,824 bicycles that are geotracked and locked into a network of 692 stations across Chicago.
+* Customers who purchase single-ride or full-day passes are referred to as casual riders. Customers who purchase annual memberships are Cyclistic members
+* Financial analysts have concluded, that annual memberships are much more profitable than casual riders
+* Marketing manager Moreno believes that maximizing the number of annual members will be key to future growth
+
+
+### Business Goal
+* **Design marketing strategies aimed at converting casual riders into annual members**
+
+### Questions to answer 
+
+1. How do annual members and casual riders use Cyclistic bikes differently?
+2. Why would casual riders buy Cyclistic annual memberships?
+3. How can Cyclistic use digital media to influence casual riders to become members?
+
+## Key Question
+* **How do annual members and casual riders use Cyclistic bikes differently?**
+
+## Data Set 
+The data we use is from 01.01.2019 to 31.12.2019. It covers all bike rides in this period undertaken by subscribers or casual users. The following information can be found in the dataset:
+* **Trip ID** Unique ID for each ride
+* **Start and end time of each trip** Given in date-time-format (DD/MM/YYYY - HH:MM:SS)
+* **Start station and end station, ID and Name** Each station has a unique numeric ID assigned to as well as a unique name
+* **bike ID** each bike has a unique ID
+* **user type** categorizes the client in subscriber and casual user
+* **gender and birth year** gender and birth year of the client
+
+## Data Cleaning and Merging
+To obtain the data for the whole year 2019, I had to use for different csv-files, that contain the same columns, but follow different naming conventions. The first step of the data cleaning process is therefore to define column names and ensure consistency of the column naming across all four tables. 
+
+```{r}
+##Libraries needed: 
+library(tidyverse)
+library(ggplot2)
+library(lubridate)
+```
+
+Uploading Divvy datasets (csv files) 
+```{r}
+setwd("\\\\wsl.localhost/Ubuntu/home/josef/code/josefperera/Capstone Project/Data/csv")
+```
+
+
+```{r}
+df2<- read_csv("Divvy_Trips_2019_Q2.csv")
+df3 <- read_csv("Divvy_Trips_2019_Q3.csv")
+df4 <- read_csv("Divvy_Trips_2019_Q4.csv")
+df1 <- read_csv("Divvy_Trips_2019_Q1.csv")
+```
+
+Comparing column names across all four data sets to ensure consistency in naming conventions 
+```{r}
+colnames(df1)
+colnames(df2)
+colnames(df3)
+colnames(df4)
+```
+
+Renaming column names. In the case of the 2019 data, this was quite easy, since only the table of Quarter 2 used different column names. The tables for the other quarters were named consistently.
+```{r}
+df2<- df2 %>% rename("trip_id" = "01 - Rental Details Rental ID",
+                     "start_time"="01 - Rental Details Local Start Time",
+                     "end_time"="01 - Rental Details Local End Time",
+                     "bikeid"="01 - Rental Details Bike ID",
+                     "tripduration"="01 - Rental Details Duration In Seconds Uncapped",
+                     "from_station_id"="03 - Rental Start Station ID",
+                     "from_station_name"="03 - Rental Start Station Name",
+                     "to_station_id"="02 - Rental End Station ID",
+                     "to_station_name"="02 - Rental End Station Name",
+                     "usertype"="User Type",
+                     "gender"="Member Gender",
+                     "birthyear"="05 - Member Details Member Birthday Year")
+```
+
+In the next step, I checked for incongruities in the naming of categories across the tables using the str()- and unique()-function
+
+Luckily, everything looks fine here. 
+So finally, we can merge all four tables into one single table!
+```{r}
+df <- bind_rows(df1, df2, df3, df4)
+```
+
+## Data Analysis
+
+### Summary Statistics 
+
+Number of rows
+```{r}
+nrow(df)
+```
+Dimension 
+```{r}
+dim(df)  
+```
+  
+Structure of the data 
+```{r}
+str(df)
+```
+The table consists of 6 numeric columns, 4 character columns and 2 columns with date-time information (class POSIXct)
+```{r}
+summary(df) 
+```
+The summary table gives us a first idea of the distribution of the data, the means, outliers and missing data.
+
+###Adding additonal columns for better insights
+In the first step of our analysis, I would like to add additional columns, categorizing bike rides according to month, day of the month, weekday and time of the day. This would help me get better insights about  how far subscribers and casual users use bikes at different times of the day, week, month, or season of the year. At first, I have to transform the start time to date format. 
+
+```{r}
+df$date <- as.Date(df$start_time, format="%d/%m/%Y")
+df$month <- format(as.Date(df$date),"%m")
+df$day <- format(as.Date(df$date),"%d")
+df$weekday <- format(as.Date(df$date),"%A")
+```
+
+Time of the day
+```{r}
+df$time <- format(df$start_time, format = "%H")
+```
+
+
+
+After having extracted the hour, we can attribute hours to time ranges categorized as "Night : 12am - 06am" "Morning : 06am - 12am", "Afternoon : 12pm - 6pm", "Evening : 6pm - 12am".
+
+Before doing so, I have to transform df$dayrange and df$time to numeric class.
+```{r}
+# check for the class of the newly created columns: 
+sapply( df, class)
+df$time <- as.numeric(as.character(df$time))
+```
+
+Now I can categorize the time in day-range categories: 
+```{r}
+cut_points <- c(0, 6, 12, 18, 24)
+labels <- c("Night", "Morning", "Afternoon", "Evening")
+df$dayrange <- cut(df$time, cut_points, labels = labels, right = FALSE)
+```
+
+
+### Adding Ride length
+Since ride duration is only given in seconds, I create another column, that gives me the duration of a ride in minutes. 
+```{r}
+df$ride_length <- difftime(df$end_time, df$start_time)
+str(df)
+is.difftime(df$ride_length)
+df$ride_length <- as.numeric(as.character(df$ride_length))
+```
+
+###Adding Age Groups
+The information 'Year of Birth' is given, however there are a lot of missing values (14,1%). The same applies for the information 'Gender' (14,6%).
+
+```{r}
+summary(df$birthyear)
+mean(is.na(df$birthyear))
+mean(is.na(df$gender))
+```
+
+Based on the information, I would like to develop a column with age brackets in order to determine if there are age-specific differences in using the offer of Bicyclist. At first, I will create a column 'Age'
+```{r}
+df$age <- (2019-df$birthyear)
+summary(df$age)
+```
+```{r}
+df1 <-df[!(df$age < 260),]
+summary(df1$age)
+```
+
+I now can attribute age to a age group. I use the common marketing age grouping: 
+
+*18-24
+*25-34
+*35-44
+*45-54
+*55-64
+*65+
+
+```{r}
+age_brackets <- c(0,18, 25, 35, 45, 55, 64, Inf)
+labels_age <- c("0-17 y.o.", "18-24 y.o.", "25-34 y.o.", "35-44 y.o.", "45-54 y.o.", "55-64 y.o.", ">=65 y.o.")
+df$age_bracket <- cut(df$age, age_brackets, labels_age, right=FALSE)
+```
+
+
+Checking the new column, I realize that there are trips with negative time values. Also, there a trips ending at the Headquarter, which are probably for maintenance / repair. 
+There are also rides that last several days. In order to focus only on daily use cases, I exclude all rides that last longer than 12 hours (720 min).
+After discovering outliers in the age-column (a datapoint with age = 260 years), I also exclude all data points with individuals older than 100 years to ensure that the age mean is not distorted by outliers. 
+I therefore create a 2nd data frame that excludes these entries.
+I make sure, that incomplete datasets (missing information on gender and age) remain within the new data frame.
+
+```{r}
+df_v2 <- df[!(df$to_station_name == "HQ QR" | df$ride_length<0 | 
+                (!is.na(df$age) & df$age >100) |df$ride_length>720),]
+```
+
+
+
+#Visualization and Analysis 
+
+Let's first check for the population characteristics of subscribers and casual customers.
+```{r}
+df_v2 %>% group_by(usertype) %>% summarise(total = n()) %>% 
+  mutate(percentage = round(total/sum(total)*100,2)) %>% 
+  ggplot(mapping=aes(x= usertype, y=percentage, fill=usertype))+
+  geom_col(width=0.5) +
+  labs(x="User Type", y= "Percentage", title="Bike rides 2019, by user type") + 
+  geom_text(aes(label = percentage), vjust = 3)
+```
+There are almost 3-times as many rides conducted by subscribers than by customers.
+Now lets have a look into the demographic characteristics of Cyclist-users, grouped by user type. 
+As mentioned before, there are lots of missing values concerning age and gender of casual users. I therefore ommitted the missing values when analyzing age and gender composition of the usertype populations. 
+
+```{r}
+df_v2 %>%  drop_na(gender) %>% group_by(usertype, gender) %>% summarise(total=n()) %>% 
+  mutate(Percentage = round(total/sum(total)*100,2)) %>% 
+  ggplot(mapping = aes(x=usertype, y = Percentage, fill = gender))+
+  geom_col(position = "dodge")+ labs(x = "User Type", 
+  title="Cyclist Users 2019, grouped by user type and gender") + 
+  geom_text(aes(label = Percentage), vjust = 1.5, size = 4,position = position_dodge(width = 0.9))
+```
+We can see, that subscibers and casual customers differ slightly when it comes to gender composition. Female casual customers represent almost 40% of their user type class, while female subscribers represent only 25% of their user type class.
+
+```{r}
+df_v2 %>%  drop_na(age_bracket) %>%  group_by(usertype, age_bracket) %>% summarise(total=n()) %>% 
+  mutate(Percentage = round(total/sum(total)*100,2)) %>% 
+  ggplot(mapping = aes(x=age_bracket, y = Percentage, fill = usertype))+
+  geom_col(position = "dodge")+ labs(x = "Age Bracket", 
+  title="Cyclist Users 2019, grouped by user type and age bracket") + 
+  geom_text(aes(label = Percentage), vjust = 0, size = 3,
+            position = position_dodge(width = 0.9))+coord_flip()
+```
+Roughly half of Cyclist subscribers and casual users are in the age bracket between 25 to 34 years. Differences in age structure between the user types are evident in the age bracket 18 to 24 years, where casual customers are almost 3 times more than subscribers. However, cyclist subscribers are significantly more represented in the higher age brackets (35 years onwards). 
+In conclusion, we can assume, that casual customers are younger as well as slightly less male. Although, I need to mention, that we don't know how to impute the missing age and gender data and therefore cannot be sure, that omitting the missing values resulted in a biased data set. In order to properly interpret the population characteristics, we need further information on the missing data. 
+
+## When do casual customers and subscribers use the bike?
+
+Lets take a look at the circumstances under which subscribers and casual users use the bike. 
+First of all, throughout the year:
+
+```{r}
+df_v2 %>% group_by(usertype, month) %>% summarise(number_of_rides = n()) %>% 
+  mutate(Percentage = round(number_of_rides/sum(number_of_rides)*100,1)) %>% 
+  ggplot(mapping= aes(x= month, y= Percentage, fill = usertype)) + 
+  geom_col(position = "dodge") + 
+  labs(x= "Month", title = "Cyclist rides per user type per Month in 2019" )+
+  geom_text(aes(label= Percentage), vjust=1.5, size = 3,  
+            position = position_dodge(width = 0.9))
+```
+In both user groups we can observe that rides increase throughout spring to peak during the summer months and to decrease in the same manner during autumn. The difference between summer months and winter months in demand for rides is much stronger within the group of casual customers, while subscriber usage throughout the year is slightly smoother. 
+Let's have a look at ride demand throughout the week: 
+```{r}
+df_v2 %>% mutate(weekday = wday(df_v2$start_time, label = TRUE )) %>% 
+  group_by(usertype, weekday) %>% 
+  summarise(number_of_rides = n(),average_duration = mean(ride_length)) %>% 
+  arrange(usertype, weekday) %>% 
+  ggplot(mapping = aes(x= weekday, y= number_of_rides, fill = usertype)) +
+  geom_col(position = "dodge")
+```
+Demand for rides for the two usertypes is almost "complementary". While subscribers use Cyclist heaily during the week (Monday to Friday) and reduce their demand at the weekend almost by half, casual customers are 
+
+# Descriptive analysis on ride_length (all figures in seconds)
+
+```{r}
+mean(df_v2$ride_length) #straight average (total ride length / rides)
+median(df_v2$ride_length) #midpoint number in the ascending array of ride lengths
+max(df_v2$ride_length) #longest ride
+min(df_v2$ride_length) #shortest ride
+summary(df_v2$ride_length)
+```
+
+Aggregated ride length grouped by user type: 
+```{r}
+#Aggregated length ride grouped by user type 
+aggregate(df_v2$ride_length ~ df_v2$usertype, FUN = mean)
+aggregate(df_v2$ride_length ~ df_v2$usertype, FUN = median)
+aggregate(df_v2$ride_length ~ df_v2$usertype, FUN = max)
+aggregate(df_v2$ride_length ~ df_v2$usertype, FUN = min)
+```
+ 
+ Aggregated ride length grouped by gender and age bracket:
+```{r}
+aggregate(df_v2$ride_length ~ df_v2$gender, FUN = mean)
+aggregate(df_v2$ride_length ~ df_v2$gender, FUN = median)
+aggregate(df_v2$ride_length ~ df_v2$gender, FUN = max)
+aggregate(df_v2$ride_length ~ df_v2$gender, FUN = min)
+```
+```{r}
+aggregate(df_v2$ride_length ~ df_v2$age_bracket, FUN = mean)
+aggregate(df_v2$ride_length ~ df_v2$age_bracket, FUN = median)
+aggregate(df_v2$ride_length ~ df_v2$age_bracket, FUN = max)
+aggregate(df_v2$ride_length ~ df_v2$age_bracket, FUN = min)
+```
+```{r}
+
+```
+
+
+```{r}
+```
+
+
+
+### Visualizing 
+#Visualization for average duration
+
+```{r}
+df_v2 %>% mutate(weekday = wday(df_v2$start_time, label = TRUE )) %>% 
+  group_by(usertype, weekday) %>% 
+  summarise(number_of_rides = n(),average_duration = mean(ride_length)) %>% 
+  arrange(usertype, weekday) %>% 
+  ggplot(mapping = aes(x= weekday, y= average_duration, fill = usertype)) +
+  geom_col(position = "dodge")
+```
+
+```{r}
+df_v2 %>% group_by(usertype, dayrange) %>% summarise(number_of_rides = n(),average_duration = mean(ride_length)) %>% arrange(usertype, dayrange) %>% ggplot(mapping= aes(x= dayrange, y=number_of_rides, fill = usertype)) + geom_col(position = "dodge")
+```
+```{r}
+df_v2 %>% group_by(usertype, dayrange) %>% summarise(number_of_rides = n(),average_duration = mean(ride_length)) %>% arrange(usertype, dayrange) %>% ggplot(mapping= aes(x= dayrange, y=average_duration, fill = usertype)) + geom_col(position = "dodge")
+```
+
+

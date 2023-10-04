@@ -1,3 +1,9 @@
+#installing libraries 
+library(tidyverse)
+library(ggplot2)
+library(lubridate)
+
+
 # Upload Divvy datasets (csv files) here
 df2<- read_csv("Divvy_Trips_2019_Q2.csv")
 df3 <- read_csv("Divvy_Trips_2019_Q3.csv")
@@ -56,6 +62,7 @@ str(df)
 is.difftime(df$ride_length)
 df$ride_length <- as.numeric(as.character(df$ride_length))
 
+#Creating a second dataset without rides with negative ride duration and rides heading to the HQ.
 str(df)
 df_v2 <- df[!(df$to_station_name == "HQ QR" | df$ride_length<0),]
 
@@ -75,21 +82,19 @@ aggregate(df_v2$ride_length ~ df_v2$usertype, FUN = max)
 aggregate(df_v2$ride_length ~ df_v2$usertype, FUN = min)
 
 # See the average ride time by each day for subscribers vs customers
-aggregate(all_trips_v2$ride_length ~ all_trips_v2$member_casual + all_trips_v2$day_of_week, FUN = mean)
+aggregate(df_v2$ride_length ~ df_v2$usertype + df_v2$weekday, FUN = mean)
 
-df_v2$weekday<- ordered(df_v2$day_of_week, levels=c("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"))
+df_v2$weekday<- ordered(df_v2$weekday, levels=c("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"))
 
 df_v2 %>% mutate(weekday = wday(df_v2$start_time, label = TRUE )) %>% 
-  summarise(number_of_rides = n()
-            , average_duration = mean(ride_length)) %>%
+  summarise(number_of_rides = n(), average_duration = mean(ride_length)) %>% 
   arrange(usertype, weekday)
 
 #Plotting total rides arranged by user type and weekday 
 df_v2 %>% mutate(weekday = wday(df_v2$start_time, label = TRUE )) %>% 
-  +     group_by(usertype, weekday) %>% 
-  +     summarise(number_of_rides = n()
-                  ,average_duration = mean(ride_length)) %>%
-  +     arrange(usertype, weekday) %>% 
+  group_by(usertype, weekday) %>% 
+  summarise(number_of_rides = n(),average_duration = mean(ride_length)) %>%
+  arrange(usertype, weekday) %>% 
   ggplot(mapping = aes(x = weekday, y = number_of_rides, fill = usertype)) + 
   geom_col(position = "dodge")
 
@@ -101,7 +106,14 @@ df_v2 %>% mutate(weekday = wday(df_v2$start_time, label = TRUE )) %>%
   ggplot(mapping = aes(x= weekday, y= average_duration, fill = usertype)) +
   geom_col(position = "dodge")
 
+#Visualization for number of trips grouped by gender and usertype
+df_v2 %>% group_by(usertype, gender) %>% summarise(number_of_rides = n()) %>%
+  arrange(usertype, gender) %>% 
+  + ggplot(mapping=aes(x= usertype, y = number_of_rides, fill = gender)) +
+  geom_col()
+
+
 # Exporting Summary
-counts <- aggregate(all_trips_v2$ride_length ~ all_trips_v2$member_casual + all_trips_v2$day_of_week, FUN = mean)
-write.csv(counts, file = '~/')
+counts <- aggregate(df_v2$ride_length ~ df_v2$usertype+ df_v2$weekday, FUN = mean)
+write.csv(counts,"counts.csv")
 
