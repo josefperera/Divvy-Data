@@ -3,8 +3,8 @@ title: "Business Task Statement _ Capstone Cyclist"
 author: "Josef"
 date: "2023-09-22"
 output:
-  html_document: default
   pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
