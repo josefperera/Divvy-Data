@@ -1,0 +1,6 @@
+"0","df_v2 %>% group_by(usertype) %>% summarise(total = n()) %>% "
+"0","  mutate(percentage = round(total/sum(total)*100,2)) %>% "
+"0","  ggplot(mapping=aes(x= usertype, y=percentage, fill=usertype))+"
+"0","  geom_col(width=0.5) +labs(x=""User Type"", y= ""Percentage"", "
+"0","                            title=""Bike rides 2019, by user type"") + "
+"0","  geom_text(aes(label = percentage), vjust = 3)"

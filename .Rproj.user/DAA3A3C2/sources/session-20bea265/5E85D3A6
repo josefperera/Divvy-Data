@@ -1,0 +1,27 @@
+{
+    "id": "5E85D3A6",
+    "path": "//wsl.localhost/Ubuntu/home/josef/code/josefperera/Capstone Project/Cleaning Data.R",
+    "project_path": "Cleaning Data.R",
+    "type": "r_source",
+    "hash": "1445431700",
+    "contents": "",
+    "dirty": false,
+    "created": 1695724637299.0,
+    "source_on_save": false,
+    "relative_order": 3,
+    "properties": {
+        "tempName": "Untitled1",
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "110,12",
+        "scrollLine": "96"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1696434500,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1696455118902,
+    "read_only": false,
+    "read_only_alternatives": []
+}

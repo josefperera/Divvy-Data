@@ -1,0 +1,8 @@
+"0","df_v2 %>% group_by(usertype, month) %>% summarise(number_of_rides = n()) %>% "
+"0","  mutate(Percentage = round(number_of_rides/sum(number_of_rides)*100,1)) %>% "
+"0","  ggplot(mapping= aes(x= month, y= Percentage, fill = usertype)) + "
+"0","  geom_col(position = ""dodge"") + "
+"0","  labs(x= ""Month"", title = ""Cyclist rides per user type per Month in 2019"" )+"
+"0","  geom_text(aes(label= Percentage), vjust=1.5, size = 3,  "
+"0","            position = position_dodge(width = 0.9))"
+"2","`summarise()` has grouped output by 'usertype'. You can override using the `.groups` argument."

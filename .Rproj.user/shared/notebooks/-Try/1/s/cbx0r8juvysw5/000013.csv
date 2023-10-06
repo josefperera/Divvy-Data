@@ -1,0 +1,7 @@
+"0","df_v2 %>% mutate(weekday = wday(df_v2$start_time, label = TRUE )) %>% "
+"0","  group_by(usertype, weekday) %>% "
+"0","  summarise(number_of_rides = n(),average_duration = mean(ride_length)) %>% "
+"0","  arrange(usertype, weekday) %>% "
+"0","  ggplot(mapping = aes(x= weekday, y= average_duration, fill = usertype)) +"
+"0","  geom_col(position = ""dodge"")"
+"2","`summarise()` has grouped output by 'usertype'. You can override using the `.groups` argument."

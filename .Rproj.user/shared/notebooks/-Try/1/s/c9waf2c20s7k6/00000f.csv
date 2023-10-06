@@ -1,0 +1,44 @@
+"0","df2<- read_csv(""Divvy_Trips_2019_Q2.csv"")"
+"2","[1mRows: [22m[34m1108163[39m [1mColumns: [22m[34m12[39m"
+"2","[36m──[39m [1mColumn specification[22m [36m─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[39m
+[1mDelimiter:[22m "",""
+[31mchr[39m  (4): 03 - Rental Start Station Name, 02 - Rental End Station Name, User Type, Member Gender
+[32mdbl[39m  (5): 01 - Rental Details Rental ID, 01 - Rental Details Bike ID, 03 - Rental Start Station ID, 02 - Rental End Station ID, 05 - Memb...
+[32mnum[39m  (1): 01 - Rental Details Duration In Seconds Uncapped
+[34mdttm[39m (2): 01 - Rental Details Local Start Time, 01 - Rental Details Local End Time"
+"2","
+[36mℹ[39m Use `spec()` to retrieve the full column specification for this data.
+[36mℹ[39m Specify the column types or set `show_col_types = FALSE` to quiet this message."
+"0","df3 <- read_csv(""Divvy_Trips_2019_Q3.csv"")"
+"2","[1mRows: [22m[34m1640718[39m [1mColumns: [22m[34m12[39m"
+"2","[36m──[39m [1mColumn specification[22m [36m─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[39m
+[1mDelimiter:[22m "",""
+[31mchr[39m  (4): from_station_name, to_station_name, usertype, gender
+[32mdbl[39m  (5): trip_id, bikeid, from_station_id, to_station_id, birthyear
+[32mnum[39m  (1): tripduration
+[34mdttm[39m (2): start_time, end_time"
+"2","
+[36mℹ[39m Use `spec()` to retrieve the full column specification for this data.
+[36mℹ[39m Specify the column types or set `show_col_types = FALSE` to quiet this message."
+"0","df4 <- read_csv(""Divvy_Trips_2019_Q4.csv"")"
+"2","[1mRows: [22m[34m704054[39m [1mColumns: [22m[34m12[39m"
+"2","[36m──[39m [1mColumn specification[22m [36m─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[39m
+[1mDelimiter:[22m "",""
+[31mchr[39m  (4): from_station_name, to_station_name, usertype, gender
+[32mdbl[39m  (5): trip_id, bikeid, from_station_id, to_station_id, birthyear
+[32mnum[39m  (1): tripduration
+[34mdttm[39m (2): start_time, end_time"
+"2","
+[36mℹ[39m Use `spec()` to retrieve the full column specification for this data.
+[36mℹ[39m Specify the column types or set `show_col_types = FALSE` to quiet this message."
+"0","df1 <- read_csv(""Divvy_Trips_2019_Q1.csv"")"
+"2","[1mRows: [22m[34m365069[39m [1mColumns: [22m[34m12[39m"
+"2","[36m──[39m [1mColumn specification[22m [36m─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[39m
+[1mDelimiter:[22m "",""
+[31mchr[39m  (4): from_station_name, to_station_name, usertype, gender
+[32mdbl[39m  (5): trip_id, bikeid, from_station_id, to_station_id, birthyear
+[32mnum[39m  (1): tripduration
+[34mdttm[39m (2): start_time, end_time"
+"2","
+[36mℹ[39m Use `spec()` to retrieve the full column specification for this data.
+[36mℹ[39m Specify the column types or set `show_col_types = FALSE` to quiet this message."

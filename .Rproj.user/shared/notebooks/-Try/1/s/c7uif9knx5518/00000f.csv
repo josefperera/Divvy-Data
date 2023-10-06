@@ -1,0 +1,4 @@
+"0","df$date <- as.Date(df$start_time, format=""%d/%m/%Y"")"
+"0","df$month <- format(as.Date(df$date),""%m"")"
+"0","df$day <- format(as.Date(df$date),""%d"")"
+"0","df$weekday <- format(as.Date(df$date),""%A"")"

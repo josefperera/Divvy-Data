@@ -1,0 +1,7 @@
+"0","df_v2 %>%  drop_na(gender) %>% group_by(usertype, gender) %>% summarise(total=n()) %>% "
+"0","  mutate(Percentage = round(total/sum(total)*100,2)) %>% "
+"0","  ggplot(mapping = aes(x=usertype, y = Percentage, fill = gender))+"
+"0","  geom_col(position = ""dodge"")+ labs(x = ""User Type"", "
+"0","  title=""Cyclist Users 2019, grouped by user type and gender"") + "
+"0","  geom_text(aes(label = Percentage), vjust = 1.5, size = 4,position = position_dodge(width = 0.9))"
+"2","`summarise()` has grouped output by 'usertype'. You can override using the `.groups` argument."

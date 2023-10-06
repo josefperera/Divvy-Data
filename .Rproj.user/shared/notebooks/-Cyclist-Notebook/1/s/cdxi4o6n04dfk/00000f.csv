@@ -1,0 +1,8 @@
+"0","df_v2 %>% group_by(usertype,time) %>% summarize(count = n()) %>% "
+"0","  mutate(Percentage= round(count/sum(count)*100,2)) %>% "
+"0","    ggplot(aes(x=time, y=Percentage, fill=usertype)) +"
+"0","  geom_col(position=""dodge"") + "
+"0","  labs(x = ""time of the day, hourly from 0 to 23"", "
+"0","         y = ""Percentage of rides per user type"","
+"0","         title = ""Percentage of Cyclist rides per hour per user type in 2019"")"
+"2","`summarise()` has grouped output by 'usertype'. You can override using the `.groups` argument."

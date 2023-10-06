@@ -1,0 +1,1 @@
+"0","aggregate(df_v2$ride_length ~ df_v2$age_bracket, FUN = mean)"

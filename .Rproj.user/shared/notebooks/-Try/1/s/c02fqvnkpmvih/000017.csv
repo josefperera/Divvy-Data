@@ -1,0 +1,2 @@
+"0","#Aggregated length ride grouped by user type "
+"0","aggregate(df_v2$ride_length ~ df_v2$usertype, FUN = mean)"

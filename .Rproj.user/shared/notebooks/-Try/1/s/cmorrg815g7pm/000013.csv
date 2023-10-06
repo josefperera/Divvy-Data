@@ -1,0 +1,2 @@
+"0","df_v2 %>% group_by(usertype, dayrange) %>% summarise(number_of_rides = n(),average_duration = mean(ride_length)) %>% arrange(usertype, dayrange) %>% ggplot(mapping= aes(x= dayrange, y=number_of_rides, fill = usertype)) + geom_col(position = ""dodge"")"
+"2","`summarise()` has grouped output by 'usertype'. You can override using the `.groups` argument."

@@ -1,0 +1,1 @@
+"0","df_v2 <- df[!(df$to_station_name == ""HQ QR"" | df$ride_length<0 | (!is.na(df$age) & df$age >100) |df$ride_length>720),]"
