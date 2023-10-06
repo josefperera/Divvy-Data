@@ -229,7 +229,7 @@ As mentioned before, there are lots of missing values concerning age and gender 
 
 ```{r}
 df_v2 %>%  drop_na(gender) %>% group_by(usertype, gender) %>% summarise(total=n()) %>% 
-  mutate(Percentage = round(total/sum(total)*100,2)) %>% 
+  mutate(Percentage = round(total/sum(total)*100)) %>% 
   ggplot(mapping = aes(x=usertype, y = Percentage, fill = gender))+
   geom_col(position = "dodge")+ labs(x = "User Type", 
   title="Cyclist Users 2019, grouped by user type and gender") + 
@@ -242,6 +242,7 @@ df_v2 %>%  drop_na(age_bracket) %>%  group_by(usertype, age_bracket) %>% summari
   mutate(Percentage = round(total/sum(total)*100,2)) %>% 
   ggplot(mapping = aes(x=age_bracket, y = Percentage, fill = usertype))+
   geom_col(position = "dodge")+ labs(x = "Age Bracket", 
+  y= "Percentage of user type class",
   title="Cyclist Users 2019, grouped by user type and age bracket") + 
   geom_text(aes(label = Percentage), vjust = 0, size = 3,
             position = position_dodge(width = 0.9))+coord_flip()
@@ -259,21 +260,279 @@ df_v2 %>% group_by(usertype, month) %>% summarise(number_of_rides = n()) %>%
   mutate(Percentage = round(number_of_rides/sum(number_of_rides)*100,1)) %>% 
   ggplot(mapping= aes(x= month, y= Percentage, fill = usertype)) + 
   geom_col(position = "dodge") + 
-  labs(x= "Month", title = "Cyclist rides per user type per Month in 2019" )+
+  labs(x= "Month", y = " Percentage of user tyoe class", 
+       title = "Cyclist rides per user type per Month in 2019, in percentage of user type class" )+
   geom_text(aes(label= Percentage), vjust=1.5, size = 3,  
             position = position_dodge(width = 0.9))
 ```
-In both user groups we can observe that rides increase throughout spring to peak during the summer months and to decrease in the same manner during autumn. The difference between summer months and winter months in demand for rides is much stronger within the group of casual customers, while subscriber usage throughout the year is slightly smoother. 
-Let's have a look at ride demand throughout the week: 
+In both user groups we can observe that rides increase throughout spring to peak during the summer months and to decrease in the same manner during autumn. The difference between summer months and winter months in demand for rides is much stronger within the group of casual customers, while subscriber usage throughout the year is slightly smoother. The smoothness of the subscriber curve (in comparison to the demand of casual customers) can be explained through the fact, that they use bikes more regularly in their daily life for things such as daily commute to work, or also as an alternative to public transports or motorized vehicles to move across town to do errands. Casual customers demand peaking during the summer months might be hinting to a rather leisure-motivated use of Cyclist bikes. 
+Let's have a look at ride demand throughout the week, maybe this could let us understand better the differences in demand between Customers and Subscribers. 
 ```{r}
 df_v2 %>% mutate(weekday = wday(df_v2$start_time, label = TRUE )) %>% 
   group_by(usertype, weekday) %>% 
   summarise(number_of_rides = n(),average_duration = mean(ride_length)) %>% 
   arrange(usertype, weekday) %>% 
   ggplot(mapping = aes(x= weekday, y= number_of_rides, fill = usertype)) +
-  geom_col(position = "dodge")
+  geom_col(position = "dodge") + labs(x = "Day of the Week", 
+  y = "Number of rides (total)", 
+  title= "Total Cyclist rides per day and per user type in 2019")
 ```
-Demand for rides for the two usertypes is almost "complementary". While subscribers use Cyclist heaily during the week (Monday to Friday) and reduce their demand at the weekend almost by half, casual customers are 
+```{r}
+df_v2 %>% mutate(weekday = wday(df_v2$start_time, label = TRUE )) %>% 
+  group_by(usertype, weekday) %>% 
+  summarise(total = n()) %>% mutate(Percentage = round(total/sum(total)*100)) %>% 
+  arrange(usertype, weekday) %>% 
+  ggplot(mapping = aes(x= weekday, y= Percentage, fill = usertype)) +
+  geom_col(position = "dodge") + labs(x = "Day of the Week", 
+  y = "Percentag of rides per user type class", 
+  title= "Percentage of rides per weekday and per user type in 2019") + 
+  geom_text(aes(label= Percentage), vjust=1.5, size = 3,  
+            position = position_dodge(width = 0.9))
+
+```
+
+
+Demand for rides for the two usertypes is almost "complementary". While subscribers demand Cyclist bikes a lot during the week (Monday to Friday) and reduce their demand at the weekend almost by half, casual customers demand for bike rides peaks during Sundays and Saturdays. This would be a strong argument for the theory, that casual customers use bikes more likely for leisure reasons than subscribers, and that subscribers rely on Cyclist bikes a lot during the week to commute to work. 
+Lets have a look at daytime variations, this might tell us even more about the different demand patterns.
+
+```{r}
+df_v2 %>% group_by(usertype,time) %>% summarize(count = n()) %>% 
+  mutate(Percentage= round(count/sum(count)*100,2)) %>% 
+    ggplot(aes(x=time, y=Percentage, fill=usertype)) +
+  geom_col(position="dodge") + 
+  labs(x = "time of the day, hourly from 0 to 23", 
+         y = "Percentage of rides per user type",
+         title = "Percentage of Cyclist rides per hour per user type in 2019")
+```
+Demand of the two user types differs a lot: While subscription users demand peaks in the morning (between 7am and 8am) as well as in the late afternoon (4pm to 6pm), casual customers demand stays on a constant high level from 11am to 6pm. Once more, we could infer from that, that a significant part of subscribers demand constitutes rides to or from work, while casual customers use it all along the day, without significant peaks.
+In order to better understand the demand coming from casual customers, I would like to further focus on the hypothesis, that casual customers use bikes mostly in their freetime. Therefore, let's see what happens during a week with a bank holiday. 
+Let's check out for example the week of the 21st to the 27th of January 2019. Monday of that week was a holiday (MLK Day). How does the demand pattern of that week differ from the average weekly demand pattern ?
+
+```{r}
+df_v2 %>% mutate(weekday = wday(df_v2$start_time, label = TRUE )) %>% 
+  filter(between(date, as.Date('2019-01-20'), as.Date('2019-01-26'))) %>% group_by(usertype, date) %>% 
+  summarise(total = n()) %>% mutate(Percentage = round(total/sum(total)*100)) %>% 
+  ggplot(mapping = aes(x= date, y= Percentage, fill = usertype)) +
+  geom_col(position = "dodge") + labs(x = "Day of the Week", 
+  y = "Percentag of rides per user type class", 
+  title= "Percentage of rides per weekday and per user type, 20 Jan to 26 Jan 2019",
+  subtitle = "Week of MLK Day (Monday)") + 
+  geom_text(aes(label= Percentage), vjust=1.5, size = 3,  
+            position = position_dodge(width = 0.9)) + 
+  scale_x_date(sec.axis = sec_axis(~., name = "Weekday"),date_breaks = "1 day", 
+  date_labels = "%A" )+
+  annotate(geom = "segment", x = as.Date('2019-01-20'), y = 16, 
+           xend = as.Date('2019-01-21'), yend = 12)+
+  annotate(geom = "Text", x = as.Date('2019-01-20'), y = 17, label = "MLK Day", hjust = "center")
+```
+Let's check for the first Holiday, MLK Day in January. There is an unusual pattern to see: bike rides of subscribers are high across the week. On MLK Day, there is a smaller percentage of weekly percentage of bike rides than usually, therefore subscribers demand is quite high for a Monday (in comparison to aggregate casual demand for mondays). We might explain this through the fact, that subscribers don't go to work on that day.
+```{r}
+df_v2 %>% mutate(weekday = wday(df_v2$start_time, label = TRUE )) %>% 
+  filter(between(date, as.Date('2019-02-17'), as.Date('2019-02-23'))) %>% group_by(usertype, date) %>% 
+  summarise(total = n()) %>% mutate(Percentage = round(total/sum(total)*100)) %>% 
+  ggplot(mapping = aes(x= date, y= Percentage, fill = usertype)) +
+  geom_col(position = "dodge") + labs(x = "Day of the Week", 
+  y = "Percentag of rides per user type class", 
+  title= "Percentage of rides per weekday and per user type, 17 Feb to 23 Feb 2019",
+  subtitle = "Week of Presidents' Day (Monday)") + 
+  geom_text(aes(label= Percentage), vjust=1.5, size = 3,  
+            position = position_dodge(width = 0.9))+
+  scale_x_date(sec.axis = sec_axis(~., name = "Weekday"),date_breaks = "1 day", 
+  date_labels = "%A" ) +
+  annotate(geom = "segment", x = as.Date('2019-02-17'), y = 20, 
+           xend = as.Date('2019-02-18'), yend = 10)+
+  annotate(geom = "Text", x = as.Date('2019-02-17'), y = 22, label = "Presidents' Day", hjust = "center")
+```
+On Presidents' Day we can see a similar pattern: relative demand for bike rides of subscribers is lower than usually and is at par with the demand-percentage from casual customers.
+It is important to notice that in the week of MLK Day and Presients' Day, casual customer demand is NOT peaking on the holiday, which would refute my theory that casual customers are mostly visitors spending the holiday to discover the city on bike. 
+Let's fast forward to lovely springtime and check the next big holiday, Memorial Day. 
+
+```{r}
+df_v2 %>% mutate(weekday = wday(df_v2$start_time, label = TRUE )) %>% 
+  filter(between(date, as.Date('2019-05-26'), as.Date('2019-06-01'))) %>% group_by(usertype, date) %>% 
+  summarise(total = n()) %>% mutate(Percentage = round(total/sum(total)*100)) %>% 
+  ggplot(mapping = aes(x= date, y= Percentage, fill = usertype)) +
+  geom_col(position = "dodge") + labs(x = "Day of the Week", 
+  y = "Percentag of rides per user type class", 
+  title= "Percentage of rides per weekday and per user type, 26 May to 2 Jun 2019",
+  subtitle= "Week of Memorial Day (Monday)") + 
+  geom_text(aes(label= Percentage), vjust=1.5, size = 3,  
+            position = position_dodge(width = 0.9))+
+  scale_x_date(sec.axis = sec_axis(~., name = "Weekday"),date_breaks = "1 day", 
+  date_labels = "%A") + 
+  annotate(geom = "segment", x = as.Date('2019-05-28'), y = 20, 
+           xend = as.Date('2019-05-27'), yend = 13)+
+  annotate(geom = "Text", x = as.Date('2019-05-28'), y = 22, label = "Memorial Day", hjust = "center")
+```
+```{r}
+df_v2 %>% mutate(weekday = wday(df_v2$start_time, label = TRUE )) %>% 
+  filter(between(date, as.Date('2019-05-26'), as.Date('2019-06-01'))) %>% group_by(usertype, date) %>% 
+  summarise(total = n()) %>% mutate(Percentage = round(total/sum(total)*100)) %>% 
+  ggplot(mapping = aes(x= date, y= total, fill = usertype)) +
+  geom_col(position = "dodge") + labs(x = "Day of the Week", 
+  y = "Total rides per user type class", 
+  title= "Total rides per weekday and per user type, 26 May to 2 Jun 2019",
+  subtitle= "Week of Memorial Day (Monday)") + 
+  geom_text(aes(label= total), vjust=1.5, size = 3,  
+            position = position_dodge(width = 0.9))+
+  scale_x_date(sec.axis = sec_axis(~., name = "Weekday"),date_breaks = "1 day", 
+  date_labels = "%A") + 
+  annotate(geom = "segment", x = as.Date('2019-05-28'), y = 20, 
+           xend = as.Date('2019-05-27'), yend = 13)+
+  annotate(geom = "Text", x = as.Date('2019-05-28'), y = 22, label = "Memorial Day", hjust = "center")
+```
+
+
+On Memorial Day we can clearly see an unusually high percentage of casual customer demand for a Monday. Looking at the total number of casual customer rides however, we see that overall demand on the holiday was particularly low. 
+Checking the weather of that particual Memorial Day, the National Weather Service tells me "With the 1.92" of rain recorded at Chicago O'Hare, this set a daily record for precipitation for May 27th, as well as making it the wettest Memorial Day on record." We might have to take into account, that weather is a major factor for bike demand.
+
+```{r}
+df_v2 %>% mutate(weekday = wday(df_v2$start_time, label = TRUE )) %>% 
+  filter(between(date, as.Date('2019-06-30'), as.Date('2019-07-06'))) %>% group_by(usertype, date) %>% 
+  summarise(total = n()) %>% mutate(Percentage = round(total/sum(total)*100,1)) %>% 
+  ggplot(mapping = aes(x= date, y= Percentage, fill = usertype)) +
+  geom_col(position = "dodge") + labs(x = "Day of the Week", 
+  y = "Percentag of rides per user type class", 
+  title= "Percentage of rides per weekday and per user type, 30 Jun to 6 Jul 2019", 
+  subtitle= "Week of Independence Day (Thursday)") + 
+  geom_text(aes(label= Percentage), vjust=1.5, size = 3,  
+            position = position_dodge(width = 0.9)) +
+  scale_x_date(sec.axis = sec_axis(~., name = "Weekday"),date_breaks = "1 day", 
+  date_labels = "%A" )+
+  annotate(geom = "segment", x = as.Date('2019-07-03'), y = 22, 
+           xend = as.Date('2019-07-04'), yend = 20.3)+
+  annotate(geom = "Text", x = as.Date('2019-07-02'), y = 23, label = "Independence Day", hjust = "center")
+```
+Similar pattern on the week of Independence Day: The percentage of demand for bikes coming from casual customers spikes on the holiday and stays on a high level on the following days. Another indicator for the hypothesis, that a big percentage of casual customers is due to visitors  /tourists. 
+Lets have a look at the total number of rides during that week, grouped by user type:
+
+```{r}
+df_v2 %>% mutate(weekday = wday(df_v2$start_time, label = TRUE )) %>% 
+  filter(between(date, as.Date('2019-06-30'), as.Date('2019-07-06'))) %>% group_by(usertype, date) %>% 
+  summarise(total = n()) %>% mutate(Percentage = round(total/sum(total)*100,1)) %>% 
+  ggplot(mapping = aes(x= date, y= total, fill = usertype)) +
+  geom_col(position = "dodge") + labs(x = "Day of the Week", 
+  y = "Total rides per user type", 
+  title= "Total rides per weekday and per user type, 30 Jun to 6 Jul 2019", 
+  subtitle= "Week of Independence Day (Thursday)") + 
+  geom_text(aes(label= total), vjust=1.5, size = 3,  
+            position = position_dodge(width = 0.9)) +
+  scale_x_date(sec.axis = sec_axis(~., name = "Weekday"),date_breaks = "1 day", 
+  date_labels = "%A" )+
+  annotate(geom = "segment", x = as.Date('2019-07-05'), y = 11000, 
+           xend = as.Date('2019-07-04'), yend = 9374)+
+  annotate(geom = "Text", x = as.Date('2019-07-06'), y = 12000, label = "Independence Day", hjust = "right")
+```
+This confirms the hypothesis: when looking at the total numbers on Thursday, we see that demand from casual customers surpasses demand of subscribers and remains high throughout the weekend. 
+```{r}
+df_v2 %>% mutate(weekday = wday(df_v2$start_time, label = TRUE )) %>% 
+  filter(between(date, as.Date('2019-09-01'), as.Date('2019-09-07'))) %>% group_by(usertype, date) %>% 
+  summarise(total = n()) %>% mutate(Percentage = round(total/sum(total)*100,1)) %>% 
+  ggplot(mapping = aes(x= date, y= Percentage, fill = usertype)) +
+  geom_col(position = "dodge") + labs(x = "Day of the Week", 
+  y = "Percentag of rides per user type class", 
+  title= "Percentage of rides per weekday and per user type, 1 Sep to 7 Sep 2019",
+  subtitle ="Week of Labor Day (Monday)") + geom_text(aes(label= Percentage), vjust=1.5, size = 3,  
+            position = position_dodge(width = 0.9))+
+  scale_x_date(sec.axis = sec_axis(~., name = "Weekday"),date_breaks = "1 day", 
+  date_labels = "%A" )+
+  annotate(geom = "segment", x = as.Date('2019-09-03'), y = 18, 
+           xend = as.Date('2019-09-02'), yend = 15)+
+  annotate(geom = "Text", x = as.Date('2019-09-03'), y = 19, label = "Labor Day", hjust = "center")
+```
+```{r}
+df_v2 %>% mutate(weekday = wday(df_v2$start_time, label = TRUE )) %>% 
+  filter(between(date, as.Date('2019-09-01'), as.Date('2019-09-07'))) %>% group_by(usertype, date) %>% 
+  summarise(total = n()) %>% mutate(Percentage = round(total/sum(total)*100,1)) %>% 
+  ggplot(mapping = aes(x= date, y= total, fill = usertype)) +
+  geom_col(position = "dodge") + labs(x = "Day of the Week", 
+  y = "Total of rides per user type class", 
+  title= "Total of rides per weekday and per user type, 1 Sep to 7 Sep 2019",
+  subtitle ="Week of Labor Day (Monday)") + geom_text(aes(label= total), vjust=1.5, size = 3,  
+            position = position_dodge(width = 0.9))+
+  scale_x_date(sec.axis = sec_axis(~., name = "Weekday"),date_breaks = "1 day", 
+  date_labels = "%A" )+
+  annotate(geom = "segment", x = as.Date('2019-09-03'), y = 18, 
+           xend = as.Date('2019-09-02'), yend = 15)+
+  annotate(geom = "Text", x = as.Date('2019-09-03'), y = 19, label = "Labor Day", hjust = "center")
+```
+Same on Labor Day Weekend: Monday exhibits a casual customer demand for rides that surpasses the one of subscribers, but drops dramatically the day after the holiday. 
+
+```{r}
+df_v2 %>% mutate(weekday = wday(df_v2$start_time, label = TRUE )) %>% 
+  filter(between(date, as.Date('2019-11-24'), as.Date('2019-11-30'))) %>% group_by(usertype, date) %>% 
+  summarise(total = n()) %>% mutate(Percentage = round(total/sum(total)*100,1)) %>% 
+  ggplot(mapping = aes(x= date, y= Percentage, fill = usertype)) +
+  geom_col(position = "dodge") + labs(x = "Day of the Week", 
+  y = "Percentag of rides per user type class", 
+  title= "Percentage of rides per weekday and per user type, 24 Nov to 30 Nov 2019", 
+  subtitle ="Week of Thanksgiving Day (Thursday)" ) + 
+  geom_text(aes(label= Percentage), vjust=1.5, size = 3,  
+            position = position_dodge(width = 0.9))+
+  scale_x_date(sec.axis = sec_axis(~., name = "Weekday"),date_breaks = "1 day", 
+  date_labels = "%A" ) + 
+  annotate(geom = "segment", x = as.Date('2019-11-28'), y = 20, xend = as.Date('2019-11-28'), yend = 10)+
+  annotate(geom = "Text", x = as.Date('2019-11-28'), y = 22, label = "Thanksgiving Day", hjust = "center")
+```
+```{r}
+df_v2 %>% mutate(weekday = wday(df_v2$start_time, label = TRUE )) %>% 
+  filter(between(date, as.Date('2019-11-24'), as.Date('2019-11-30'))) %>% group_by(usertype, date) %>% 
+  summarise(total = n()) %>%  
+  ggplot(mapping = aes(x= date, y= total, fill = usertype)) +
+  geom_col(position = "dodge") + labs(x = "Day of the Week", 
+  y = "Total of rides per user type class", 
+  title= "Total of rides per weekday and per user type, 24 Nov to 30 Nov 2019", 
+  subtitle ="Week of Thanksgiving Day (Thursday)" ) + 
+  geom_text(aes(label= total), vjust=1.5, size = 3,  
+            position = position_dodge(width = 0.9))+
+  scale_x_date(sec.axis = sec_axis(~., name = "Weekday"),date_breaks = "1 day", 
+  date_labels = "%A" ) + 
+  annotate(geom = "segment", x = as.Date('2019-11-28'), y = 20, xend = as.Date('2019-11-28'), yend = 10)+
+  annotate(geom = "Text", x = as.Date('2019-11-28'), y = 22, label = "Thanksgiving Day", hjust = "center")
+```
+Checking for Thanksgiving day, we have a different picture. Looking at relative demand of casual customers, it only slightly peaks on the holiday and on Black Friday, but remains in absolute numbers very low in comparison to subscriber rides. Once again, weather might play a role:  
+
+
+
+```{r}
+df_v2 %>% mutate(weekday = wday(df_v2$start_time, label = TRUE )) %>% 
+  filter(between(date, as.Date('2019-12-22'), as.Date('2019-12-28'))) %>% group_by(usertype, date) %>% 
+  summarise(total = n()) %>% mutate(Percentage = round(total/sum(total)*100,1)) %>% 
+  ggplot(mapping = aes(x= date, y= Percentage, fill = usertype)) +
+  geom_col(position = "dodge") + labs(x = "Day of the Week", 
+  y = "Percentag of rides per user type class", 
+  title= "Percentage of rides per weekday and per user type, 23 Jun to 13 Jul 2019",
+  subtitle="Week of Christmas Day (Wednesday)") +
+  geom_text(aes(label= Percentage), vjust=1.5, size = 3,  
+            position = position_dodge(width = 0.9))+
+   scale_x_date(sec.axis = sec_axis(~., name = "Weekday"),date_breaks = "1 day", 
+  date_labels = "%A" ) +
+  annotate(geom = "segment", x = as.Date('2019-12-24'), y = 23, 
+           xend = as.Date('2019-12-25'), yend = 17.4)+
+  annotate(geom = "Text", x = as.Date('2019-12-24'), y = 24, label = "Christmas Day", hjust = "center")
+```
+```{r}
+df_v2 %>% mutate(weekday = wday(df_v2$start_time, label = TRUE )) %>% 
+  filter(between(date, as.Date('2019-12-22'), as.Date('2019-12-28'))) %>% group_by(usertype, date) %>% 
+  summarise(total = n()) %>%  
+  ggplot(mapping = aes(x= date, y= total, fill = usertype)) +
+  geom_col(position = "dodge") + labs(x = "Day of the Week", 
+  y = "Total of rides per user type class", 
+  title= "Total of rides per weekday and per user type, 23 Jun to 13 Jul 2019",
+  subtitle="Week of Christmas Day (Wednesday)") +
+  geom_text(aes(label= total), vjust=1.5, size = 3,  
+            position = position_dodge(width = 0.9))+
+   scale_x_date(sec.axis = sec_axis(~., name = "Weekday"),date_breaks = "1 day", 
+  date_labels = "%A" ) +
+  annotate(geom = "segment", x = as.Date('2019-12-24'), y = 23, 
+           xend = as.Date('2019-12-25'), yend = 17.4)+
+  annotate(geom = "Text", x = as.Date('2019-12-24'), y = 24, label = "Christmas Day", hjust = "center")
+```
+
+There is a peak in demand from casual customers on the first and the second Christmas Day, but overall demand remains very low due to the cold weather.
+
+In conclusion, holidays and weekends increase casual customer demand, while subscriber demand drops on weekends and holidays. Casual customers are more likely to rent a bike in the warm summer month and there demand is highly influenced by weather conditions. 
+
 
 # Descriptive analysis on ride_length (all figures in seconds)
 
